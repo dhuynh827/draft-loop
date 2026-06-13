@@ -1,7 +1,10 @@
 import { MarkdownPreviewStyle } from "@/lib/constants";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import ReactMarkdown from "react-markdown";
@@ -21,6 +24,8 @@ export function DocumentEditor({
   onTitleChange,
   onBodyChange
 }: DocumentEditorProps) {
+  const [activeBodyTab, setActiveBodyTab] = useState<"preview" | "markdown">("preview");
+
   return (
     <Stack spacing={2}>
       <Stack
@@ -46,51 +51,77 @@ export function DocumentEditor({
             onChange={(event) => onTitleChange(event.target.value)}
             fullWidth
           />
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={2}
-            sx={{ minHeight: 520 }}
+          <Box
+            sx={{
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 1,
+              overflow: "hidden"
+            }}
           >
-            <Box
-              component="textarea"
-              aria-label="Document body markdown editor"
-              value={body}
-              onChange={(event) => onBodyChange(event.target.value)}
-              placeholder="Start writing in Markdown, paste a draft, or ask the assistant to help create a first pass."
+            <Tabs
+              value={activeBodyTab}
+              onChange={(_, value: "preview" | "markdown") => setActiveBodyTab(value)}
+              aria-label="Document body view"
               sx={{
-                flex: 1,
-                minHeight: 520,
-                resize: "vertical",
-                border: 1,
+                borderBottom: 1,
                 borderColor: "divider",
-                borderRadius: 1,
-                color: "text.primary",
-                bgcolor: "background.paper",
-                font: "inherit",
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
-                lineHeight: 1.6,
-                p: 2,
-                "&:focus": {
-                  borderColor: "primary.main",
-                  outline: "2px solid",
-                  outlineColor: "primary.light"
+                minHeight: 44,
+                "& .MuiTab-root": {
+                  minHeight: 44
                 }
               }}
-            />
-            <Box
-              aria-label="Document body markdown preview"
-              sx={MarkdownPreviewStyle}
             >
-              {body.trim() ? (
-                <ReactMarkdown>{body}</ReactMarkdown>
-              ) : (
-                <Typography color="text.secondary">
-                  Markdown preview will appear here.
-                </Typography>
-              )}
-            </Box>
-          </Stack>
+              <Tab label="Preview" value="preview" />
+              <Tab label="Markdown" value="markdown" />
+            </Tabs>
+
+            {activeBodyTab === "preview" ? (
+              <Box
+                aria-label="Document body markdown preview"
+                sx={{
+                  ...MarkdownPreviewStyle,
+                  border: 0,
+                  borderRadius: 0
+                }}
+              >
+                {body.trim() ? (
+                  <ReactMarkdown>{body}</ReactMarkdown>
+                ) : (
+                  <Typography color="text.secondary">
+                    Markdown preview will appear here.
+                  </Typography>
+                )}
+              </Box>
+            ) : (
+              <Box
+                component="textarea"
+                aria-label="Document body markdown editor"
+                value={body}
+                onChange={(event) => onBodyChange(event.target.value)}
+                placeholder="Start writing in Markdown, paste a draft, or ask the assistant to help create a first pass."
+                sx={{
+                  display: "block",
+                  width: "100%",
+                  minHeight: 520,
+                  resize: "vertical",
+                  border: 0,
+                  color: "text.primary",
+                  bgcolor: "background.paper",
+                  font: "inherit",
+                  fontFamily:
+                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+                  lineHeight: 1.6,
+                  p: 2,
+                  "&:focus": {
+                    outline: "2px solid",
+                    outlineColor: "primary.light",
+                    outlineOffset: -2
+                  }
+                }}
+              />
+            )}
+          </Box>
         </Stack>
       </Paper>
     </Stack>
