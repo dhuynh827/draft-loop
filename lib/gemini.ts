@@ -52,9 +52,8 @@ export class GeminiProvider {
   private readonly model: string;
 
   constructor(options: GeminiProviderOptions = {}) {
-
     /*
-    * GEMINI_API_KEY needs to be included in .env
+     * GEMINI_API_KEY needs to be included in .env
      */
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -66,9 +65,7 @@ export class GeminiProvider {
     this.model = options.model ?? process.env.GEMINI_MODEL ?? defaultModel;
   }
 
-  async generateSuggestion(
-    request: SuggestionRequest
-  ): Promise<SuggestionResponse> {
+  async generateSuggestion(request: SuggestionRequest): Promise<SuggestionResponse> {
     const config = modeConfig[request.mode];
     const response = await this.client.models.generateContent({
       model: this.model,

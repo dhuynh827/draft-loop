@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { SuggestionResponse } from "@/lib/types";
+import ReactMarkdown from "react-markdown";
 
 type SuggestionCardProps = {
   suggestion: SuggestionResponse;
@@ -54,7 +55,8 @@ export function SuggestionCard({
           </Typography>
         ) : null}
 
-        <TextField
+        <ReactMarkdown>{draft}</ReactMarkdown>
+        {/* <TextField
           label={canApply ? "Editable output" : "Critique"}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -66,16 +68,12 @@ export function SuggestionCard({
               readOnly: !canApply
             }
           }}
-        />
+        /> */}
       </Stack>
 
       <Divider />
 
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ justifyContent: "flex-end", p: 1.5 }}
-      >
+      <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", p: 1.5 }}>
         <Button startIcon={<CloseIcon />} onClick={onReject}>
           Reject
         </Button>

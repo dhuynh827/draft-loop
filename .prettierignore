@@ -1,0 +1,11 @@
+.next
+node_modules
+out
+dist
+coverage
+README.md
+yarn.lock
+tsconfig.tsbuildinfo
+.env
+.env.local
+.take-home-token
