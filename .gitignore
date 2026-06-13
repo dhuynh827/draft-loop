@@ -1,0 +1,16 @@
+.env
+.env.local
+.take-home-token
+node_modules/
+.next/
+out/
+dist/
+coverage/
+__pycache__/
+.venv/
+.DS_Store
+
+# gcloud SDK installs (in case anyone unpacks it inside the repo)
+.gcloud/
+google-cloud-sdk/
+google-cloud-cli-*.tar.gz
