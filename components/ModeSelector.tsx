@@ -38,11 +38,11 @@ export function ModeSelector({ value, onChange }: ModeSelectorProps) {
       }}
     >
       {modes.map((mode) => (
-        <ToggleButton key={mode.value} value={mode.value} aria-label={mode.label}>
-          <Tooltip title={mode.label}>
+        <Tooltip title={mode.label} enterDelay={200} arrow>
+          <ToggleButton key={mode.value} value={mode.value} aria-label={mode.label}>
             <span>{mode.icon}</span>
-          </Tooltip>
-        </ToggleButton>
+          </ToggleButton>
+        </Tooltip>
       ))}
     </ToggleButtonGroup>
   );
