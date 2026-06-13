@@ -82,8 +82,18 @@ const modeConfig: Record<AiMode, ModeConfig> = {
     kind: "replacement",
     temperature: 0.7,
     maxOutputTokens: 1800,
-    systemInstruction:
-      "You draft useful document content from the user's instruction. Return only JSON."
+    systemInstruction: `
+      You are an expert technical writer.
+
+      Generate useful document drafts from the user's instructions.
+
+      If the user input lacks context:
+      - Make reasonable assumptions.
+      - Clearly label assumptions.
+      - Include open questions.
+
+      Return only valid JSON matching the provided schema.
+  `
   },
   rewrite: {
     kind: "replacement",
