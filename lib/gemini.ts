@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import { z } from "zod";
 import { buildPrompt } from "@/lib/prompts";
 import type { AiMode, SuggestionRequest, SuggestionResponse } from "@/lib/types";
 
@@ -14,7 +15,67 @@ type ModeConfig = {
   systemInstruction: string;
 };
 
-const defaultModel = "gemini-2.5-flash";
+const defaultModel = "gemini-3.1-flash-lite";
+
+const geminiSuggestionResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    kind: {
+      type: Type.STRING,
+      format: "enum",
+      enum: ["replacement", "critique"],
+      description:
+        "Whether the response can replace document content or is critique-only feedback."
+    },
+    content: {
+      type: Type.STRING,
+      description: "The draft, rewrite, critique, or summary text."
+    },
+    rationale: {
+      type: Type.STRING,
+      nullable: true,
+      description: "A short explanation of what changed or why the feedback matters."
+    }
+  },
+  required: ["kind", "content"],
+  propertyOrdering: ["kind", "content", "rationale"]
+};
+
+function normalizeTextValue(value: unknown) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (value instanceof String) {
+    return value.toString();
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    if (typeof record.text === "string") {
+      return record.text;
+    }
+
+    if (typeof record.value === "string") {
+      return record.value;
+    }
+
+    if (typeof record.content === "string") {
+      return record.content;
+    }
+  }
+
+  return value;
+}
+
+const textValueSchema = z.preprocess(normalizeTextValue, z.string().trim().min(1));
+
+const suggestionResponseSchema = z.object({
+  kind: z.enum(["replacement", "critique"]),
+  content: textValueSchema,
+  rationale: textValueSchema.optional()
+});
 
 const modeConfig: Record<AiMode, ModeConfig> = {
   draft: {
@@ -55,7 +116,7 @@ export class GeminiProvider {
     /*
      * GEMINI_API_KEY needs to be included in .env
      */
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY is required to call Gemini.");
@@ -74,7 +135,8 @@ export class GeminiProvider {
         systemInstruction: config.systemInstruction,
         temperature: config.temperature,
         maxOutputTokens: config.maxOutputTokens,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: geminiSuggestionResponseSchema
       }
     });
 
@@ -107,20 +169,13 @@ export class GeminiProvider {
     }
 
     try {
-      const parsed = JSON.parse(trimmedText) as Partial<SuggestionResponse>;
-      const kind = parsed.kind === "critique" ? "critique" : fallbackKind;
-
-      if (typeof parsed.content !== "string" || !parsed.content.trim()) {
-        throw new Error("Gemini response did not include content.");
-      }
+      const parsed = suggestionResponseSchema.parse(JSON.parse(trimmedText));
+      const kind = parsed.kind ?? fallbackKind;
 
       return {
         kind,
-        content: parsed.content.trim(),
-        rationale:
-          typeof parsed.rationale === "string" && parsed.rationale.trim()
-            ? parsed.rationale.trim()
-            : undefined
+        content: parsed.content,
+        rationale: parsed.rationale
       };
     } catch {
       return {
