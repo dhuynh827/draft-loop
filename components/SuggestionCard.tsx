@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditIcon from "@mui/icons-material/Edit";
 import UndoIcon from "@mui/icons-material/Undo";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -32,6 +33,7 @@ export function SuggestionCard({
   const [previewDraft, setPreviewDraft] = useState(suggestion?.content ?? "");
   const [draft, setDraft] = useState(suggestion?.content ?? "");
   const [isEditing, setIsEditing] = useState(false);
+  const [hasCopied, setHasCopied] = useState(false);
   const canApply = suggestion?.kind === "replacement";
   const canEdit = mode !== "critique";
   const isDraftEmpty = draft.trim().length === 0;
@@ -59,6 +61,11 @@ export function SuggestionCard({
 
     setPreviewDraft(draft);
     setIsEditing(false);
+  }
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(previewDraft);
+    setHasCopied(true);
   }
 
   return (
@@ -169,11 +176,20 @@ export function SuggestionCard({
           <Button startIcon={<UndoIcon />} onClick={handleDiscard}>
             Discard
           </Button>
-        ) : (
+        ) : canApply ? (
           <Button startIcon={<CloseIcon />} onClick={onReject}>
             Reject
           </Button>
-        )}
+        ) : null}
+        {!canApply ? (
+          <Button
+            variant="outlined"
+            startIcon={<ContentCopyIcon />}
+            onClick={handleCopy}
+          >
+            {hasCopied ? "Copied" : "Copy"}
+          </Button>
+        ) : null}
         {canEdit ? (
           isEditing ? (
             <Button
@@ -199,11 +215,7 @@ export function SuggestionCard({
             Apply to document
           </Button>
         ) : null}
-        {!canApply ? (
-          <Button variant="outlined" startIcon={<EditIcon />} disabled>
-            Review only
-          </Button>
-        ) : null}
+        {!canApply ? <Chip size="small" label="Review only" /> : null}
       </Stack>
     </Box>
   );

@@ -20,6 +20,7 @@ type AssistantPanelProps = {
   instruction: string;
   selectedContext: SelectedContext | null;
   suggestion: SuggestionResponse | null;
+  suggestionMode: AiMode | null;
   isGenerating: boolean;
   error: string | null;
   onModeChange: (mode: AiMode) => void;
@@ -41,6 +42,7 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
       instruction,
       selectedContext,
       suggestion,
+      suggestionMode,
       isGenerating,
       error,
       onModeChange,
@@ -147,7 +149,7 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
           {suggestion ? (
             <SuggestionCard
               key={`${suggestion.kind}:${suggestion.content}`}
-              mode={mode}
+              mode={suggestionMode ?? mode}
               suggestion={suggestion}
               onAccept={onAccept}
               onReject={onReject}

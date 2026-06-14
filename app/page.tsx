@@ -23,13 +23,21 @@ const initialDocument = {
   body: ""
 };
 
+type ActiveSuggestion = {
+  mode: AiMode;
+  response: SuggestionResponse;
+};
+
 export default function Home() {
   const [title, setTitle] = useState(initialDocument.title);
   const [body, setBody] = useState(initialDocument.body);
   const [mode, setMode] = useState<AiMode>("draft");
   const [instruction, setInstruction] = useState("");
   const [selectedContext, setSelectedContext] = useState<SelectedContext | null>(null);
-  const [suggestion, setSuggestion] = useState<SuggestionResponse | null>(null);
+  const [activeSuggestion, setActiveSuggestion] = useState<ActiveSuggestion | null>(
+    null
+  );
+  const [pendingMode, setPendingMode] = useState<AiMode | null>(null);
   const [pendingDocumentReplacement, setPendingDocumentReplacement] = useState<
     string | null
   >(null);
@@ -78,7 +86,7 @@ export default function Home() {
       }
 
       const data = (await response.json()) as SuggestionResponse;
-      setSuggestion(data);
+      setActiveSuggestion({ mode, response: data });
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -91,19 +99,11 @@ export default function Home() {
   }
 
   function handleAccept(content: string) {
-    if (suggestion?.kind === "replacement") {
-      if (mode === "summarize") {
-        const summaryContent = content.trim().startsWith("#")
-          ? content.trim()
-          : `### Summary\n\n${content.trim()}`;
-
-        setBody((currentBody) =>
-          currentBody.trim()
-            ? `${currentBody.trimEnd()}\n\n${summaryContent}`
-            : summaryContent
-        );
+    if (activeSuggestion?.response.kind === "replacement") {
+      if (activeSuggestion.mode === "summarize") {
+        appendDocumentSection("Summary", content);
         setSelectedContext(null);
-        setSuggestion(null);
+        setActiveSuggestion(null);
         setInstruction("");
         return;
       }
@@ -130,7 +130,7 @@ export default function Home() {
       }
     }
 
-    setSuggestion(null);
+    setActiveSuggestion(null);
     setInstruction("");
   }
 
@@ -141,7 +141,7 @@ export default function Home() {
 
     setBody(pendingDocumentReplacement);
     setPendingDocumentReplacement(null);
-    setSuggestion(null);
+    setActiveSuggestion(null);
     setInstruction("");
   }
 
@@ -150,26 +150,104 @@ export default function Home() {
   }
 
   function handleRejectSuggestion() {
-    setSuggestion(null);
+    setActiveSuggestion(null);
     setSelectedContext(null);
     setInstruction("");
   }
 
   function handleClearSelectedContext() {
     setSelectedContext(null);
-    setSuggestion(null);
+    setActiveSuggestion(null);
   }
 
   function handleSelectionMode(nextMode: AiMode, nextSelectedContext: SelectedContext) {
     setMode(nextMode);
     setSelectedContext(nextSelectedContext);
-    setSuggestion(null);
+    setActiveSuggestion(null);
     setError(null);
 
     window.requestAnimationFrame(() => {
       assistantPanelRef.current?.focusInstruction();
     });
   }
+
+  function handleModeChange(nextMode: AiMode) {
+    if (activeSuggestion) {
+      setPendingMode(nextMode);
+      return;
+    }
+
+    setMode(nextMode);
+  }
+
+  function resetSuggestionState() {
+    setActiveSuggestion(null);
+    setSelectedContext(null);
+    setInstruction("");
+    setPendingMode(null);
+  }
+
+  function switchToPendingMode() {
+    if (pendingMode) {
+      setMode(pendingMode);
+    }
+  }
+
+  function handleDiscardPendingSuggestion() {
+    switchToPendingMode();
+    resetSuggestionState();
+  }
+
+  async function handleCopyPendingSuggestion() {
+    if (!activeSuggestion) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(activeSuggestion.response.content);
+    switchToPendingMode();
+    resetSuggestionState();
+  }
+
+  function appendDocumentSection(titleText: string, content: string) {
+    const sectionContent = content.trim().startsWith("#")
+      ? content.trim()
+      : `### ${titleText}\n\n${content.trim()}`;
+
+    setBody((currentBody) =>
+      currentBody.trim()
+        ? `${currentBody.trimEnd()}\n\n${sectionContent}`
+        : sectionContent
+    );
+  }
+
+  function handleAppendPendingSuggestion() {
+    if (!activeSuggestion) {
+      return;
+    }
+
+    if (activeSuggestion.response.kind === "critique") {
+      appendDocumentSection(
+        `AI Review - ${new Date().toLocaleString()}`,
+        activeSuggestion.response.content
+      );
+    } else if (activeSuggestion.mode === "summarize") {
+      appendDocumentSection("Summary", activeSuggestion.response.content);
+    }
+
+    switchToPendingMode();
+    resetSuggestionState();
+  }
+
+  function handleCancelModeSwitch() {
+    setPendingMode(null);
+  }
+
+  const canAppendPendingSuggestion =
+    activeSuggestion?.response.kind === "critique" ||
+    activeSuggestion?.mode === "summarize";
+
+  const pendingAppendLabel =
+    activeSuggestion?.response.kind === "critique" ? "Append review" : "Append summary";
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
@@ -237,10 +315,11 @@ export default function Home() {
               mode={mode}
               instruction={instruction}
               selectedContext={selectedContext}
-              suggestion={suggestion}
+              suggestion={activeSuggestion?.response ?? null}
+              suggestionMode={activeSuggestion?.mode ?? null}
               isGenerating={isGenerating}
               error={error}
-              onModeChange={setMode}
+              onModeChange={handleModeChange}
               onInstructionChange={setInstruction}
               onClearSelectedText={handleClearSelectedContext}
               onGenerate={handleGenerate}
@@ -274,6 +353,33 @@ export default function Home() {
           >
             Replace document
           </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(pendingMode && activeSuggestion)}
+        onClose={handleCancelModeSwitch}
+        aria-labelledby="unresolved-suggestion-dialog-title"
+        aria-describedby="unresolved-suggestion-dialog-description"
+      >
+        <DialogTitle id="unresolved-suggestion-dialog-title">
+          You have an unsaved AI suggestion
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="unresolved-suggestion-dialog-description">
+            Changing modes will clear the current{" "}
+            {activeSuggestion ? activeSuggestion.mode : "AI"} suggestion. Choose how to
+            handle it before switching modes.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelModeSwitch}>Cancel</Button>
+          <Button onClick={handleDiscardPendingSuggestion}>Discard</Button>
+          <Button onClick={handleCopyPendingSuggestion}>Copy</Button>
+          {canAppendPendingSuggestion ? (
+            <Button variant="contained" onClick={handleAppendPendingSuggestion}>
+              {pendingAppendLabel}
+            </Button>
+          ) : null}
         </DialogActions>
       </Dialog>
     </Box>
