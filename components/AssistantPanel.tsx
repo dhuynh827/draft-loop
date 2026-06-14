@@ -67,7 +67,18 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
     }));
 
     return (
-      <Paper variant="outlined" sx={{ p: 2, position: "sticky", top: 24 }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2,
+          position: "sticky",
+          top: 24,
+          borderColor: "rgba(36, 99, 235, 0.14)",
+          boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
+          background:
+            "linear-gradient(0deg,rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 75%, rgba(31, 177, 222, 0.23) 100%)"
+        }}
+      >
         <Stack spacing={2}>
           <Box>
             <Typography variant="overline" color="text.secondary">
