@@ -1,6 +1,6 @@
 export const MarkdownPreviewStyle = {
   flex: 1,
-  minHeight: 520,
+  maxHeight: 720,
   overflow: "auto",
   border: 1,
   borderColor: "divider",

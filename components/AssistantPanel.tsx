@@ -81,9 +81,6 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
       >
         <Stack spacing={2}>
           <Box>
-            <Typography variant="overline" color="text.secondary">
-              Assistant
-            </Typography>
             <Typography variant="h6">{labels.assistantTitle}</Typography>
           </Box>
 

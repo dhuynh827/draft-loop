@@ -172,21 +172,6 @@ export function DocumentEditor({
 
   return (
     <Stack spacing={2}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1}
-        sx={{ justifyContent: "space-between" }}
-      >
-        <Box>
-          <Typography variant="overline" color="text.secondary">
-            Document
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {wordCount} words
-          </Typography>
-        </Box>
-      </Stack>
-
       <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
         <Stack spacing={2}>
           <TextField
@@ -223,7 +208,7 @@ export function DocumentEditor({
               border: 1,
               borderColor: "divider",
               borderRadius: 1,
-              overflow: "hidden"
+              overflow: "auto"
             }}
           >
             <Tabs
@@ -293,6 +278,19 @@ export function DocumentEditor({
               />
             )}
           </Box>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            sx={{
+              justifyContent: "flex-end",
+              alignItems: "center"
+            }}
+          >
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {wordCount} words
+              </Typography>
+            </Box>
+          </Stack>
         </Stack>
       </Paper>
       <Menu
