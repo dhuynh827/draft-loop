@@ -1,12 +1,23 @@
 import { MarkdownPreviewStyle } from "@/lib/constants";
+import type { MouseEvent, ReactNode } from "react";
 import { useState } from "react";
 import Box from "@mui/material/Box";
+import ChecklistIcon from "@mui/icons-material/Checklist";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import SummarizeIcon from "@mui/icons-material/Summarize";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { modeLabels } from "@/lib/modeLabels";
+import type { AiMode } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 
 type DocumentEditorProps = {
@@ -15,6 +26,7 @@ type DocumentEditorProps = {
   wordCount: number;
   onTitleChange: (title: string) => void;
   onBodyChange: (body: string) => void;
+  onSelectionMode: (mode: AiMode, selectedText: string) => void;
 };
 
 export function DocumentEditor({
@@ -22,9 +34,59 @@ export function DocumentEditor({
   body,
   wordCount,
   onTitleChange,
-  onBodyChange
+  onBodyChange,
+  onSelectionMode
 }: DocumentEditorProps) {
   const [activeBodyTab, setActiveBodyTab] = useState<"preview" | "markdown">("preview");
+  const [selectionMenu, setSelectionMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    text: string;
+  } | null>(null);
+
+  function openSelectionMenu(text: string, mouseX: number, mouseY: number) {
+    const selectedText = text.trim();
+
+    if (!selectedText) {
+      return;
+    }
+
+    setSelectionMenu({
+      mouseX,
+      mouseY,
+      text: selectedText
+    });
+  }
+
+  function handlePreviewSelection(event: MouseEvent<HTMLElement>) {
+    const selectedText = window.getSelection()?.toString() ?? "";
+    openSelectionMenu(selectedText, event.clientX, event.clientY);
+  }
+
+  function handleMarkdownSelection(event: MouseEvent<HTMLTextAreaElement>) {
+    const target = event.currentTarget;
+    const selectedText = target.value.slice(target.selectionStart, target.selectionEnd);
+    openSelectionMenu(selectedText, event.clientX, event.clientY);
+  }
+
+  function handleSelectionMode(mode: AiMode) {
+    if (!selectionMenu) {
+      return;
+    }
+
+    onSelectionMode(mode, selectionMenu.text);
+    setSelectionMenu(null);
+  }
+
+  const contextModes: Array<{
+    mode: AiMode;
+    icon: ReactNode;
+  }> = [
+    { mode: "draft", icon: <EditNoteIcon fontSize="small" /> },
+    { mode: "rewrite", icon: <AutoFixHighIcon fontSize="small" /> },
+    { mode: "critique", icon: <ChecklistIcon fontSize="small" /> },
+    { mode: "summarize", icon: <SummarizeIcon fontSize="small" /> }
+  ];
 
   return (
     <Stack spacing={2}>
@@ -79,6 +141,7 @@ export function DocumentEditor({
             {activeBodyTab === "preview" ? (
               <Box
                 aria-label="Document body markdown preview"
+                onMouseUp={handlePreviewSelection}
                 sx={{
                   ...MarkdownPreviewStyle,
                   border: 0,
@@ -99,6 +162,7 @@ export function DocumentEditor({
                 aria-label="Document body markdown editor"
                 value={body}
                 onChange={(event) => onBodyChange(event.target.value)}
+                onMouseUp={handleMarkdownSelection}
                 placeholder="Start writing in Markdown, paste a draft, or ask the assistant to help create a first pass."
                 sx={{
                   display: "block",
@@ -124,6 +188,23 @@ export function DocumentEditor({
           </Box>
         </Stack>
       </Paper>
+      <Menu
+        open={Boolean(selectionMenu)}
+        onClose={() => setSelectionMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          selectionMenu
+            ? { top: selectionMenu.mouseY + 8, left: selectionMenu.mouseX }
+            : undefined
+        }
+      >
+        {contextModes.map(({ mode, icon }) => (
+          <MenuItem key={mode} onClick={() => handleSelectionMode(mode)}>
+            <ListItemIcon>{icon}</ListItemIcon>
+            <ListItemText>{modeLabels[mode].action} selected text</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
     </Stack>
   );
 }

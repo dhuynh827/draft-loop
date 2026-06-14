@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -8,7 +8,7 @@ import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { AssistantPanel } from "@/components/AssistantPanel";
+import { AssistantPanel, type AssistantPanelHandle } from "@/components/AssistantPanel";
 import { DocumentEditor } from "@/components/DocumentEditor";
 import type { AiMode, SuggestionResponse } from "@/lib/types";
 import { loadLocalDocument, saveLocalDocument } from "@/storage/localDocument";
@@ -23,9 +23,11 @@ export default function Home() {
   const [body, setBody] = useState(initialDocument.body);
   const [mode, setMode] = useState<AiMode>("draft");
   const [instruction, setInstruction] = useState("");
+  const [selectedText, setSelectedText] = useState("");
   const [suggestion, setSuggestion] = useState<SuggestionResponse | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const assistantPanelRef = useRef<AssistantPanelHandle | null>(null);
 
   useEffect(() => {
     const saved = loadLocalDocument();
@@ -58,7 +60,8 @@ export default function Home() {
         body: JSON.stringify({
           mode,
           instruction,
-          documentText: body
+          documentText: body,
+          selectedText: selectedText || undefined
         })
       });
 
@@ -85,6 +88,15 @@ export default function Home() {
     }
 
     setSuggestion(null);
+  }
+
+  function handleSelectionMode(nextMode: AiMode, nextSelectedText: string) {
+    setMode(nextMode);
+    setSelectedText(nextSelectedText);
+
+    window.requestAnimationFrame(() => {
+      assistantPanelRef.current?.focusInstruction();
+    });
   }
 
   return (
@@ -143,17 +155,21 @@ export default function Home() {
               wordCount={wordCount}
               onTitleChange={setTitle}
               onBodyChange={setBody}
+              onSelectionMode={handleSelectionMode}
             />
           </Box>
           <Box sx={{ width: { xs: "100%", lg: 440 }, flexShrink: 0 }}>
             <AssistantPanel
+              ref={assistantPanelRef}
               mode={mode}
               instruction={instruction}
+              selectedText={selectedText}
               suggestion={suggestion}
               isGenerating={isGenerating}
               error={error}
               onModeChange={setMode}
               onInstructionChange={setInstruction}
+              onClearSelectedText={() => setSelectedText("")}
               onGenerate={handleGenerate}
               onAccept={handleAccept}
               onReject={() => setSuggestion(null)}
