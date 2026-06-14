@@ -92,6 +92,22 @@ export default function Home() {
 
   function handleAccept(content: string) {
     if (suggestion?.kind === "replacement") {
+      if (mode === "summarize") {
+        const summaryContent = content.trim().startsWith("#")
+          ? content.trim()
+          : `### Summary\n\n${content.trim()}`;
+
+        setBody((currentBody) =>
+          currentBody.trim()
+            ? `${currentBody.trimEnd()}\n\n${summaryContent}`
+            : summaryContent
+        );
+        setSelectedContext(null);
+        setSuggestion(null);
+        setInstruction("");
+        return;
+      }
+
       if (selectedContext) {
         const currentSelection = body.slice(selectedContext.start, selectedContext.end);
 
