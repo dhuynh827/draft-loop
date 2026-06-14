@@ -11,6 +11,12 @@ export type SuggestionRequest = {
   selectedText?: string;
 };
 
+export type SelectedContext = {
+  text: string;
+  start: number;
+  end: number;
+};
+
 export type SuggestionResponse = {
   kind: SuggestionKind;
   content: string;

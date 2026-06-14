@@ -17,7 +17,7 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { modeLabels } from "@/lib/modeLabels";
-import type { AiMode } from "@/lib/types";
+import type { AiMode, SelectedContext } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 
 type DocumentEditorProps = {
@@ -26,7 +26,8 @@ type DocumentEditorProps = {
   wordCount: number;
   onTitleChange: (title: string) => void;
   onBodyChange: (body: string) => void;
-  onSelectionMode: (mode: AiMode, selectedText: string) => void;
+  selectedContext: SelectedContext | null;
+  onSelectionMode: (mode: AiMode, selectedContext: SelectedContext) => void;
 };
 
 export function DocumentEditor({
@@ -35,38 +36,43 @@ export function DocumentEditor({
   wordCount,
   onTitleChange,
   onBodyChange,
+  selectedContext,
   onSelectionMode
 }: DocumentEditorProps) {
   const [activeBodyTab, setActiveBodyTab] = useState<"preview" | "markdown">("preview");
   const [selectionMenu, setSelectionMenu] = useState<{
     mouseX: number;
     mouseY: number;
-    text: string;
+    context: SelectedContext;
   } | null>(null);
 
-  function openSelectionMenu(text: string, mouseX: number, mouseY: number) {
-    const selectedText = text.trim();
-
-    if (!selectedText) {
+  function openSelectionMenu(context: SelectedContext, mouseX: number, mouseY: number) {
+    if (!context.text.trim()) {
       return;
     }
 
-    setSelectionMenu({
-      mouseX,
-      mouseY,
-      text: selectedText
-    });
-  }
-
-  function handlePreviewSelection(event: MouseEvent<HTMLElement>) {
-    const selectedText = window.getSelection()?.toString() ?? "";
-    openSelectionMenu(selectedText, event.clientX, event.clientY);
+    setSelectionMenu({ mouseX, mouseY, context });
   }
 
   function handleMarkdownSelection(event: MouseEvent<HTMLTextAreaElement>) {
+    if (selectedContext) {
+      return;
+    }
+
     const target = event.currentTarget;
-    const selectedText = target.value.slice(target.selectionStart, target.selectionEnd);
-    openSelectionMenu(selectedText, event.clientX, event.clientY);
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const selectedText = target.value.slice(start, end);
+
+    openSelectionMenu(
+      {
+        text: selectedText,
+        start,
+        end
+      },
+      event.clientX,
+      event.clientY
+    );
   }
 
   function handleSelectionMode(mode: AiMode) {
@@ -74,7 +80,7 @@ export function DocumentEditor({
       return;
     }
 
-    onSelectionMode(mode, selectionMenu.text);
+    onSelectionMode(mode, selectionMenu.context);
     setSelectionMenu(null);
   }
 
@@ -112,7 +118,25 @@ export function DocumentEditor({
             value={title}
             onChange={(event) => onTitleChange(event.target.value)}
             fullWidth
+            disabled={Boolean(selectedContext)}
           />
+          {selectedContext ? (
+            <Box
+              sx={{
+                border: 1,
+                borderColor: "warning.main",
+                borderRadius: 1,
+                bgcolor: "warning.light",
+                color: "warning.contrastText",
+                p: 1.25
+              }}
+            >
+              <Typography variant="body2">
+                Document editing is locked while selected Markdown context is active.
+                Clear the selected context to edit the document.
+              </Typography>
+            </Box>
+          ) : null}
           <Box
             sx={{
               border: 1,
@@ -141,7 +165,6 @@ export function DocumentEditor({
             {activeBodyTab === "preview" ? (
               <Box
                 aria-label="Document body markdown preview"
-                onMouseUp={handlePreviewSelection}
                 sx={{
                   ...MarkdownPreviewStyle,
                   border: 0,
@@ -163,6 +186,7 @@ export function DocumentEditor({
                 value={body}
                 onChange={(event) => onBodyChange(event.target.value)}
                 onMouseUp={handleMarkdownSelection}
+                readOnly={Boolean(selectedContext)}
                 placeholder="Start writing in Markdown, paste a draft, or ask the assistant to help create a first pass."
                 sx={{
                   display: "block",
@@ -170,8 +194,8 @@ export function DocumentEditor({
                   minHeight: 520,
                   resize: "vertical",
                   border: 0,
-                  color: "text.primary",
-                  bgcolor: "background.paper",
+                  color: selectedContext ? "text.secondary" : "text.primary",
+                  bgcolor: selectedContext ? "action.hover" : "background.paper",
                   font: "inherit",
                   fontFamily:
                     'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',

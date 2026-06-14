@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { AssistantPanel, type AssistantPanelHandle } from "@/components/AssistantPanel";
 import { DocumentEditor } from "@/components/DocumentEditor";
-import type { AiMode, SuggestionResponse } from "@/lib/types";
+import type { AiMode, SelectedContext, SuggestionResponse } from "@/lib/types";
 import { loadLocalDocument, saveLocalDocument } from "@/storage/localDocument";
 
 const initialDocument = {
@@ -23,7 +23,7 @@ export default function Home() {
   const [body, setBody] = useState(initialDocument.body);
   const [mode, setMode] = useState<AiMode>("draft");
   const [instruction, setInstruction] = useState("");
-  const [selectedText, setSelectedText] = useState("");
+  const [selectedContext, setSelectedContext] = useState<SelectedContext | null>(null);
   const [suggestion, setSuggestion] = useState<SuggestionResponse | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export default function Home() {
           mode,
           instruction,
           documentText: body,
-          selectedText: selectedText || undefined
+          selectedText: selectedContext?.text || undefined
         })
       });
 
@@ -84,15 +84,45 @@ export default function Home() {
 
   function handleAccept(content: string) {
     if (suggestion?.kind === "replacement") {
-      setBody(content);
+      if (selectedContext) {
+        const currentSelection = body.slice(selectedContext.start, selectedContext.end);
+
+        if (currentSelection !== selectedContext.text) {
+          setError(
+            "The selected Markdown context changed. Clear the context and select the text again."
+          );
+          return;
+        }
+
+        setBody(
+          body.slice(0, selectedContext.start) +
+            content +
+            body.slice(selectedContext.end)
+        );
+        setSelectedContext(null);
+      } else {
+        setBody(content);
+      }
     }
 
     setSuggestion(null);
   }
 
-  function handleSelectionMode(nextMode: AiMode, nextSelectedText: string) {
+  function handleRejectSuggestion() {
+    setSuggestion(null);
+    setSelectedContext(null);
+  }
+
+  function handleClearSelectedContext() {
+    setSelectedContext(null);
+    setSuggestion(null);
+  }
+
+  function handleSelectionMode(nextMode: AiMode, nextSelectedContext: SelectedContext) {
     setMode(nextMode);
-    setSelectedText(nextSelectedText);
+    setSelectedContext(nextSelectedContext);
+    setSuggestion(null);
+    setError(null);
 
     window.requestAnimationFrame(() => {
       assistantPanelRef.current?.focusInstruction();
@@ -155,6 +185,7 @@ export default function Home() {
               wordCount={wordCount}
               onTitleChange={setTitle}
               onBodyChange={setBody}
+              selectedContext={selectedContext}
               onSelectionMode={handleSelectionMode}
             />
           </Box>
@@ -163,16 +194,16 @@ export default function Home() {
               ref={assistantPanelRef}
               mode={mode}
               instruction={instruction}
-              selectedText={selectedText}
+              selectedContext={selectedContext}
               suggestion={suggestion}
               isGenerating={isGenerating}
               error={error}
               onModeChange={setMode}
               onInstructionChange={setInstruction}
-              onClearSelectedText={() => setSelectedText("")}
+              onClearSelectedText={handleClearSelectedContext}
               onGenerate={handleGenerate}
               onAccept={handleAccept}
-              onReject={() => setSuggestion(null)}
+              onReject={handleRejectSuggestion}
             />
           </Box>
         </Stack>

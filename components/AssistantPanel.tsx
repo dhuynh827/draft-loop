@@ -13,12 +13,12 @@ import Typography from "@mui/material/Typography";
 import { ModeSelector } from "@/components/ModeSelector";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { modeLabels } from "@/lib/modeLabels";
-import type { AiMode, SuggestionResponse } from "@/lib/types";
+import type { AiMode, SelectedContext, SuggestionResponse } from "@/lib/types";
 
 type AssistantPanelProps = {
   mode: AiMode;
   instruction: string;
-  selectedText: string;
+  selectedContext: SelectedContext | null;
   suggestion: SuggestionResponse | null;
   isGenerating: boolean;
   error: string | null;
@@ -39,7 +39,7 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
     {
       mode,
       instruction,
-      selectedText,
+      selectedContext,
       suggestion,
       isGenerating,
       error,
@@ -54,7 +54,9 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
   ) {
     const labels = modeLabels[mode];
     const instructionRef = useRef<HTMLInputElement | null>(null);
-    const hasPromptContext = Boolean(instruction.trim() || selectedText.trim());
+    const hasPromptContext = Boolean(
+      instruction.trim() || selectedContext?.text.trim()
+    );
 
     useImperativeHandle(ref, () => ({
       focusInstruction() {
@@ -76,11 +78,11 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
 
           <TextField
             inputRef={instructionRef}
-            label={selectedText ? "Additional instruction" : "Instruction"}
+            label={selectedContext ? "Additional instruction" : "Instruction"}
             value={instruction}
             onChange={(event) => onInstructionChange(event.target.value)}
             placeholder={
-              selectedText
+              selectedContext
                 ? "Optional: add direction for the selected text"
                 : "Example: tighten the intro and call out unclear claims"
             }
@@ -89,7 +91,7 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
             minRows={4}
           />
 
-          {selectedText ? (
+          {selectedContext ? (
             <Box
               sx={{
                 border: 1,
@@ -103,7 +105,10 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
                 spacing={1}
                 sx={{ alignItems: "center", mb: 0.75 }}
               >
-                <Chip size="small" label="Selected context" />
+                <Chip size="small" label="Selected Markdown context" />
+                <Typography variant="caption" color="text.secondary">
+                  {selectedContext.start}-{selectedContext.end}
+                </Typography>
                 <Button
                   size="small"
                   startIcon={<CloseIcon />}
@@ -123,7 +128,7 @@ export const AssistantPanel = forwardRef<AssistantPanelHandle, AssistantPanelPro
                   whiteSpace: "pre-wrap"
                 }}
               >
-                {selectedText}
+                {selectedContext.text}
               </Typography>
             </Box>
           ) : null}
