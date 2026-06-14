@@ -215,7 +215,6 @@ export function SuggestionCard({
             Apply to document
           </Button>
         ) : null}
-        {!canApply ? <Chip size="small" label="Review only" /> : null}
       </Stack>
     </Box>
   );
