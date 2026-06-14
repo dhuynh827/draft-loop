@@ -52,7 +52,8 @@ This avoids turning the first version into a full Google Docs replacement, chat 
 - Kept prompt construction isolated in `lib/prompts.ts`.
 - Added a `GeminiProvider` class that initializes `GoogleGenAI`.
 - Used `GEMINI_API_KEY` for provider authentication.
-- Added optional `GEMINI_MODEL`, defaulting to `gemini-2.5-flash`.
+- Added optional `GEMINI_MODEL`, defaulting to `gemini-3.1-flash-lite`.
+- Chose `gemini-3.1-flash-lite` as the development default because its higher quota limits make iteration less likely to block on provider rate limits.
 - Mapped each `AiMode` to mode-specific Gemini generation settings.
 - Asked Gemini for JSON matching the internal `SuggestionResponse` shape.
 - Added a plain-text fallback if Gemini returns unstructured output.
