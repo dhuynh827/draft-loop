@@ -1,5 +1,64 @@
 # Luma Take-Home
 
+## DraftLoop
+
+DraftLoop is a lightweight AI-assisted document workspace for the "Where People and Agents Write Together" prompt. It keeps a Markdown document as the source of truth and lets the user ask Gemini to draft, rewrite, critique, or summarize. AI output is treated as a suggestion until the user explicitly edits, applies, appends, copies, rejects, or discards it.
+
+### Running Locally
+
+```bash
+yarn install
+cp .env.example .env
+# Add GEMINI_API_KEY to .env
+yarn dev
+```
+
+The app runs on `http://localhost:3000` by default.
+
+Optional:
+
+```bash
+# Defaults to gemini-3.1-flash-lite when omitted.
+GEMINI_MODEL=gemini-3.1-flash-lite
+```
+
+### Validation
+
+```bash
+yarn format:check
+yarn typecheck
+yarn lint
+```
+
+### Manual Gemini Pass
+
+Last checked locally:
+
+- App shell served successfully from `http://localhost:3000`.
+- `/api/ai/suggest` successfully called Gemini using the local `.env` key.
+- Test mode: `summarize`.
+- Test instruction: `Summarize this as two concise bullets.`
+- Result shape:
+
+```json
+{
+  "kind": "replacement",
+  "content": "- Finalize onboarding, test Gemini suggestions, and create a reviewer walkthrough. - Emphasize user control over AI-generated content in the MVP.",
+  "rationale": "Summarized the launch plan into two actionable bullets focusing on development tasks and the core user experience principle."
+}
+```
+
+Notes for reviewer:
+
+- The in-app browser automation surface was unavailable in my Codex session, so the final pass verified the local app shell and Gemini-backed API route directly.
+- TODOs:
+  - Add any final manual browser walkthrough notes after recording the submission video.
+  - Polish the initial loading states
+  - Add the copy selected text to the context menu
+
+
+---
+
 Modern engineering is about directing leverage — tools, judgment, taste — toward real outcomes. This take-home is designed around that.
 
 Pick a problem. Build something that works. You have \~1 working day.
