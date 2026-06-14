@@ -35,6 +35,7 @@ export function SuggestionCard({
   const canApply = suggestion?.kind === "replacement";
   const canEdit = mode !== "critique";
   const isDraftEmpty = draft.trim().length === 0;
+  const hasDraftChanged = draft !== previewDraft;
   const labels = modeLabels[mode];
 
   if (!suggestion) {
@@ -52,7 +53,7 @@ export function SuggestionCard({
   }
 
   function handleUpdate() {
-    if (isDraftEmpty) {
+    if (isDraftEmpty || !hasDraftChanged) {
       return;
     }
 
@@ -179,7 +180,7 @@ export function SuggestionCard({
               variant="outlined"
               startIcon={<VisibilityIcon />}
               onClick={handleUpdate}
-              disabled={isDraftEmpty}
+              disabled={isDraftEmpty || !hasDraftChanged}
             >
               Update
             </Button>
