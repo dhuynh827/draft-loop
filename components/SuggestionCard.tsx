@@ -34,8 +34,21 @@ export function SuggestionCard({
   const [draft, setDraft] = useState(suggestion?.content ?? "");
   const [isEditing, setIsEditing] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
-  const canApply = suggestion?.kind === "replacement";
-  const canEdit = mode !== "critique";
+  const canAccept =
+    suggestion?.kind === "replacement" || suggestion?.kind === "critique";
+  const canReject = suggestion?.kind === "replacement";
+  const canEdit = canAccept;
+  const acceptLabel =
+    mode === "summarize" || suggestion?.kind === "critique"
+      ? "Append to document"
+      : "Apply to document";
+  const statusLabel = isEditing
+    ? "Editing"
+    : mode === "summarize" || suggestion?.kind === "critique"
+      ? "Ready to append"
+      : canAccept
+        ? "Ready to apply"
+        : "Review only";
   const isDraftEmpty = draft.trim().length === 0;
   const hasDraftChanged = draft !== previewDraft;
   const labels = modeLabels[mode];
@@ -85,13 +98,7 @@ export function SuggestionCard({
           <Typography variant="subtitle1">{labels.suggestionTitle}</Typography>
           <Chip
             size="small"
-            label={
-              isEditing
-                ? "Editing"
-                : suggestion.kind === "replacement"
-                  ? "Ready to apply"
-                  : "Review only"
-            }
+            label={statusLabel}
             color={isEditing ? "primary" : "default"}
           />
         </Stack>
@@ -176,12 +183,12 @@ export function SuggestionCard({
           <Button startIcon={<UndoIcon />} onClick={handleDiscard}>
             Discard
           </Button>
-        ) : canApply ? (
+        ) : canReject ? (
           <Button startIcon={<CloseIcon />} onClick={onReject}>
             Reject
           </Button>
         ) : null}
-        {!canApply ? (
+        {!canAccept ? (
           <Button
             variant="outlined"
             startIcon={<ContentCopyIcon />}
@@ -206,13 +213,13 @@ export function SuggestionCard({
             </Button>
           )
         ) : null}
-        {canApply && !isEditing ? (
+        {canAccept && !isEditing ? (
           <Button
             variant="contained"
             startIcon={<CheckIcon />}
             onClick={() => onAccept(previewDraft)}
           >
-            Apply to document
+            {acceptLabel}
           </Button>
         ) : null}
       </Stack>

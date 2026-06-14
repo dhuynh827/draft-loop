@@ -99,6 +99,14 @@ export default function Home() {
   }
 
   function handleAccept(content: string) {
+    if (activeSuggestion?.response.kind === "critique") {
+      appendDocumentSection(`AI Review - ${new Date().toLocaleString()}`, content);
+      setSelectedContext(null);
+      setActiveSuggestion(null);
+      setInstruction("");
+      return;
+    }
+
     if (activeSuggestion?.response.kind === "replacement") {
       if (activeSuggestion.mode === "summarize") {
         appendDocumentSection("Summary", content);
