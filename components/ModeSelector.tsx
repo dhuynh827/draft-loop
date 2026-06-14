@@ -6,6 +6,7 @@ import SummarizeIcon from "@mui/icons-material/Summarize";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
+import { modeLabels } from "@/lib/modeLabels";
 import type { AiMode } from "@/lib/types";
 
 type ModeSelectorProps = {
@@ -18,10 +19,10 @@ const modes: Array<{
   label: string;
   icon: ReactNode;
 }> = [
-  { value: "draft", label: "Draft", icon: <EditNoteIcon /> },
-  { value: "rewrite", label: "Rewrite", icon: <AutoFixHighIcon /> },
-  { value: "critique", label: "Critique", icon: <ChecklistIcon /> },
-  { value: "summarize", label: "Summarize", icon: <SummarizeIcon /> }
+  { value: "draft", label: modeLabels.draft.action, icon: <EditNoteIcon /> },
+  { value: "rewrite", label: modeLabels.rewrite.action, icon: <AutoFixHighIcon /> },
+  { value: "critique", label: modeLabels.critique.action, icon: <ChecklistIcon /> },
+  { value: "summarize", label: modeLabels.summarize.action, icon: <SummarizeIcon /> }
 ];
 
 export function ModeSelector({ value, onChange }: ModeSelectorProps) {

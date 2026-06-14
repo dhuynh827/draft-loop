@@ -9,6 +9,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { ModeSelector } from "@/components/ModeSelector";
 import { SuggestionCard } from "@/components/SuggestionCard";
+import { modeLabels } from "@/lib/modeLabels";
 import type { AiMode, SuggestionResponse } from "@/lib/types";
 
 type AssistantPanelProps = {
@@ -36,14 +37,16 @@ export function AssistantPanel({
   onAccept,
   onReject
 }: AssistantPanelProps) {
+  const labels = modeLabels[mode];
+
   return (
-    <Paper variant="outlined" sx={{ p: 2.5, position: "sticky", top: 24 }}>
-      <Stack spacing={2.5}>
+    <Paper variant="outlined" sx={{ p: 2, position: "sticky", top: 24 }}>
+      <Stack spacing={2}>
         <Box>
           <Typography variant="overline" color="text.secondary">
             Assistant
           </Typography>
-          <Typography variant="h6">Ask for a draft or review</Typography>
+          <Typography variant="h6">{labels.assistantTitle}</Typography>
         </Box>
 
         <ModeSelector value={mode} onChange={onModeChange} />
@@ -66,7 +69,7 @@ export function AssistantPanel({
           onClick={onGenerate}
           disabled={isGenerating || !instruction.trim()}
         >
-          {isGenerating ? "Generating" : "Generate suggestion"}
+          {isGenerating ? "Generating" : `${labels.action} suggestion`}
         </Button>
 
         {suggestion ? (

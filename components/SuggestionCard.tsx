@@ -12,6 +12,7 @@ import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { modeLabels } from "@/lib/modeLabels";
 import type { AiMode, SuggestionResponse } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 
@@ -34,6 +35,7 @@ export function SuggestionCard({
   const canApply = suggestion?.kind === "replacement";
   const canEdit = mode !== "critique";
   const isDraftEmpty = draft.trim().length === 0;
+  const labels = modeLabels[mode];
 
   if (!suggestion) {
     return;
@@ -67,15 +69,22 @@ export function SuggestionCard({
         overflow: "hidden"
       }}
     >
-      <Stack spacing={2} sx={{ p: 2 }}>
+      <Stack spacing={1.5} sx={{ p: 1.75 }}>
         <Stack
           direction="row"
           sx={{ alignItems: "center", justifyContent: "space-between" }}
         >
-          <Typography variant="subtitle1">Suggestion</Typography>
+          <Typography variant="subtitle1">{labels.suggestionTitle}</Typography>
           <Chip
             size="small"
-            label={suggestion.kind === "replacement" ? "Can apply" : "Feedback"}
+            label={
+              isEditing
+                ? "Editing"
+                : suggestion.kind === "replacement"
+                  ? "Ready to apply"
+                  : "Review only"
+            }
+            color={isEditing ? "primary" : "default"}
           />
         </Stack>
 
@@ -154,7 +163,7 @@ export function SuggestionCard({
 
       <Divider />
 
-      <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", p: 1.5 }}>
+      <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", p: 1.25 }}>
         {isEditing ? (
           <Button startIcon={<UndoIcon />} onClick={handleDiscard}>
             Discard
@@ -186,7 +195,7 @@ export function SuggestionCard({
             startIcon={<CheckIcon />}
             onClick={() => onAccept(previewDraft)}
           >
-            Accept
+            Apply to document
           </Button>
         ) : null}
         {!canApply ? (
