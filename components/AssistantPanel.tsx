@@ -72,6 +72,7 @@ export function AssistantPanel({
         {suggestion ? (
           <SuggestionCard
             key={`${suggestion.kind}:${suggestion.content}`}
+            mode={mode}
             suggestion={suggestion}
             onAccept={onAccept}
             onReject={onReject}
