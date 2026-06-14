@@ -5,6 +5,11 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -25,6 +30,9 @@ export default function Home() {
   const [instruction, setInstruction] = useState("");
   const [selectedContext, setSelectedContext] = useState<SelectedContext | null>(null);
   const [suggestion, setSuggestion] = useState<SuggestionResponse | null>(null);
+  const [pendingDocumentReplacement, setPendingDocumentReplacement] = useState<
+    string | null
+  >(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const assistantPanelRef = useRef<AssistantPanelHandle | null>(null);
@@ -101,16 +109,34 @@ export default function Home() {
         );
         setSelectedContext(null);
       } else {
-        setBody(content);
+        setPendingDocumentReplacement(content);
+        return;
       }
     }
 
     setSuggestion(null);
+    setInstruction("");
+  }
+
+  function handleConfirmDocumentReplacement() {
+    if (!pendingDocumentReplacement) {
+      return;
+    }
+
+    setBody(pendingDocumentReplacement);
+    setPendingDocumentReplacement(null);
+    setSuggestion(null);
+    setInstruction("");
+  }
+
+  function handleCancelDocumentReplacement() {
+    setPendingDocumentReplacement(null);
   }
 
   function handleRejectSuggestion() {
     setSuggestion(null);
     setSelectedContext(null);
+    setInstruction("");
   }
 
   function handleClearSelectedContext() {
@@ -208,6 +234,32 @@ export default function Home() {
           </Box>
         </Stack>
       </Container>
+      <Dialog
+        open={Boolean(pendingDocumentReplacement)}
+        onClose={handleCancelDocumentReplacement}
+        aria-labelledby="replace-document-dialog-title"
+        aria-describedby="replace-document-dialog-description"
+      >
+        <DialogTitle id="replace-document-dialog-title">
+          Replace entire document?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="replace-document-dialog-description">
+            No selected Markdown context is active, so applying this suggestion will
+            replace the full document. This cannot be undone from the app.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDocumentReplacement}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleConfirmDocumentReplacement}
+          >
+            Replace document
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

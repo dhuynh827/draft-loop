@@ -1,6 +1,7 @@
 import { MarkdownPreviewStyle } from "@/lib/constants";
 import type { MouseEvent, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
@@ -45,6 +46,40 @@ export function DocumentEditor({
     mouseY: number;
     context: SelectedContext;
   } | null>(null);
+  const [previewSelectionError, setPreviewSelectionError] = useState<string | null>(
+    null
+  );
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const pendingTextareaSelectionRef = useRef<SelectedContext | null>(null);
+
+  useEffect(() => {
+    const pendingSelection = pendingTextareaSelectionRef.current;
+
+    if (!pendingSelection || activeBodyTab !== "markdown") {
+      return;
+    }
+
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.focus();
+    textarea.setSelectionRange(pendingSelection.start, pendingSelection.end);
+    pendingTextareaSelectionRef.current = null;
+  }, [activeBodyTab]);
+
+  useEffect(() => {
+    if (selectedContext) {
+      return;
+    }
+
+    pendingTextareaSelectionRef.current = null;
+    setSelectionMenu(null);
+    setPreviewSelectionError(null);
+    setActiveBodyTab("preview");
+  }, [selectedContext]);
 
   function openSelectionMenu(context: SelectedContext, mouseX: number, mouseY: number) {
     if (!context.text.trim()) {
@@ -52,6 +87,44 @@ export function DocumentEditor({
     }
 
     setSelectionMenu({ mouseX, mouseY, context });
+  }
+
+  function handlePreviewSelection(event: MouseEvent<HTMLElement>) {
+    if (selectedContext) {
+      return;
+    }
+
+    const selectedText = window.getSelection()?.toString().trim() ?? "";
+
+    if (!selectedText) {
+      return;
+    }
+
+    const start = body.indexOf(selectedText);
+    const lastMatch = body.lastIndexOf(selectedText);
+
+    if (start === -1) {
+      setPreviewSelectionError(
+        "That preview selection could not be found in the raw Markdown. Select from the Markdown tab instead."
+      );
+      return;
+    }
+
+    if (start !== lastMatch) {
+      setPreviewSelectionError(
+        "That preview selection appears more than once in the raw Markdown. Select the exact text from the Markdown tab instead."
+      );
+      return;
+    }
+
+    const context = {
+      text: selectedText,
+      start,
+      end: start + selectedText.length
+    };
+
+    setPreviewSelectionError(null);
+    openSelectionMenu(context, event.clientX, event.clientY);
   }
 
   function handleMarkdownSelection(event: MouseEvent<HTMLTextAreaElement>) {
@@ -64,6 +137,7 @@ export function DocumentEditor({
     const end = target.selectionEnd;
     const selectedText = target.value.slice(start, end);
 
+    setPreviewSelectionError(null);
     openSelectionMenu(
       {
         text: selectedText,
@@ -80,6 +154,8 @@ export function DocumentEditor({
       return;
     }
 
+    pendingTextareaSelectionRef.current = selectionMenu.context;
+    setActiveBodyTab("markdown");
     onSelectionMode(mode, selectionMenu.context);
     setSelectionMenu(null);
   }
@@ -137,6 +213,11 @@ export function DocumentEditor({
               </Typography>
             </Box>
           ) : null}
+          {previewSelectionError ? (
+            <Alert severity="warning" onClose={() => setPreviewSelectionError(null)}>
+              {previewSelectionError}
+            </Alert>
+          ) : null}
           <Box
             sx={{
               border: 1,
@@ -165,6 +246,7 @@ export function DocumentEditor({
             {activeBodyTab === "preview" ? (
               <Box
                 aria-label="Document body markdown preview"
+                onMouseUp={handlePreviewSelection}
                 sx={{
                   ...MarkdownPreviewStyle,
                   border: 0,
@@ -181,6 +263,7 @@ export function DocumentEditor({
               </Box>
             ) : (
               <Box
+                ref={textareaRef}
                 component="textarea"
                 aria-label="Document body markdown editor"
                 value={body}
